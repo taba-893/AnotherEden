@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>所持キャラチェッカー｜Another Eden</title>
+<style>
+  body{font-family:system-ui,Segoe UI,Arial; line-height:1.6; margin:24px;}
+  h1{font-size:22px; margin:0 0 12px;}
+  .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
+  input[type="text"]{padding:8px; min-width:220px; border:1px solid #ccc; border-radius:6px}
+  button{padding:8px 12px; border:1px solid #ccc; background:#fff; border-radius:8px; cursor:pointer}
+  button:hover{background:#f6f6f6}
+  .count{margin-left:auto; font-weight:bold}
+  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px}
+  .card{border:1px solid #e2e2e2; border-radius:10px; padding:10px; display:flex; gap:8px; align-items:center}
+  .card input{transform:scale(1.2)}
+  .badge{font-size:12px; padding:2px 6px; border:1px solid #ddd; border-radius:999px; background:#fafafa}
+  .muted{color:#666; font-size:12px}
+  details{margin-top:14px}
+  textarea{width:100%; min-height:110px; padding:8px; border:1px solid #ccc; border-radius:8px}
+  .footer{margin-top:18px; font-size:12px; color:#666}
+</style>
+</head>
+<body>
+  <h1>所持キャラチェッカー</h1>
+
+  <!-- ツールバー -->
+  <div class="toolbar">
+    <input id="q" type="text" placeholder="キャラ名で検索（例：アルド）" />
+    <select id="rarity">
+      <option value="">すべてのレアリティ</option>
+      <option value="5">★5</option>
+      <option value="4">★4</option>
+      <option value="3">★3</option>
+    </select>
+    <label><input id="ownedOnly" type="checkbox"> 所持のみ表示</label>
+    <button id="checkAll">全て所持にする</button>
+    <button id="clearAll">全て未所持にする</button>
+    <span class="count" id="count">所持 0 / 0</span>
+  </div>
+
+  <!-- 一覧 -->
+  <div class="grid" id="list"></div>
+
+  <!-- データの保存／読み込み -->
+  <details>
+    <summary>バックアップ・共有（JSONでエクスポート/インポート）</summary>
+    <div style="margin:10px 0">
+      <button id="exportBtn">エクスポート（コピー）</button>
+      <button id="importBtn">インポート（下の欄から）</button>
+    </div>
+    <textarea id="io" placeholder="ここに貼り付け／ここからコピー"></textarea>
+    <p class="muted">ブラウザのローカル保存（localStorage）を使います。このPC・このブラウザ限定で記録されます。</p>
+  </details>
+
+  <div class="footer">Tips: 文字を入力すると即時フィルタされます／変更は自動保存されます。</div>
+
+<script>
+/* ===== 1) キャラ一覧（必要に応じて追加・編集してください） ===== */
+const CHARACTERS = [
+  // name, rarity(数値), tag(シリーズ等任意)
+  {name:"アルド", rarity:5, tag:"主人公"},
+  {name:"イウェラ", rarity:5, tag:"邂逅"},
+  {name:"シェリーヌ", rarity:4, tag:"配布"},
+  {name:"ツバメ", rarity:5, tag:"AS有"},
+  {name:"マリエル", rarity:5, tag:"ヒーラー"},
+  {name:"ガリユ", rarity:4, tag:"邂逅"},
+  {name:"トゥーヴァ", rarity:5, tag:"魔"},
+  {name:"ロゼッタ", rarity:5, tag:"支援"},
+  {name:"ナギ", rarity:4, tag:"槍"},
+  {name:"デューイ", rarity:5, tag:"拳"},
+  // …好きなだけ追加
+];
+
+/* ===== 2) 状態の保存キー ===== */
+const KEY = "ae_owned_v1";
+
+/* ===== 3) 保存データの読み込み（所持:true/未所持:false） ===== */
+let owned = {}; // { "アルド": true, ... }
+try {
+  owned = JSON.parse(localStorage.getItem(KEY) || "{}");
+} catch (_) { owned = {}; }
+
+/* ===== 4) DOM生成 ===== */
+const $list = document.getElementById("list");
+const $q = document.getElementById("q");
+const $rarity = document.getElementById("rarity");
+const $ownedOnly = document.getElementById("ownedOnly");
+const $count = document.getElementById("count");
+const $io = document.getElementById("io");
+
+function createCard(ch) {
+  const div = document.createElement("label");
+  div.className = "card";
+  div.dataset.name = ch.name;
+  div.dataset.rarity = ch.rarity;
+  div.dataset.tag = ch.tag || "";
+
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = !!owned[ch.name];
+  cb.addEventListener("change", () => {
+    owned[ch.name] = cb.checked;
+    localStorage.setItem(KEY, JSON.stringify(owned));
+    updateCount();
+    applyFilter(); // 所持のみ表示のとき即反映
+  });
+
+  const txt = document.createElement("div");
+  txt.innerHTML = `<div><strong>${ch.name}</strong></div>
+                   <div class="muted">★${ch.rarity} <span class="badge">${ch.tag || "-"}</span></div>`;
+
+  div.appendChild(cb);
+  div.appendChild(txt);
+  return div;
+}
+
+function render() {
+  $list.innerHTML = "";
+  CHARACTERS.forEach(ch => $list.appendChild(createCard(ch)));
+  updateCount();
+  applyFilter();
+}
+
+function updateCount() {
+  const total = CHARACTERS.length;
+  const have = Object.values(owned).filter(Boolean).length;
+  $count.textContent = `所持 ${have} / ${total}`;
+}
+
+function applyFilter() {
+  const q = $q.value.trim().toLowerCase();
+  const r = $rarity.value;
+  const ownOnly = $ownedOnly.checked;
+
+  [...$list.children].forEach(card => {
+    const name = card.dataset.name.toLowerCase();
+    const rar = card.dataset.rarity;
+    const has = !!owned[card.dataset.name];
+
+    let show = true;
+    if (q && !name.includes(q)) show = false;
+    if (r && r !== rar) show = false;
+    if (ownOnly && !has) show = false;
+
+    card.style.display = show ? "" : "none";
+  });
+}
+
+/* ===== 5) イベント ===== */
+$q.addEventListener("input", applyFilter);
+$rarity.addEventListener("change", applyFilter);
+$ownedOnly.addEventListener("change", applyFilter);
+
+document.getElementById("checkAll").addEventListener("click", () => {
+  CHARACTERS.forEach(ch => owned[ch.name] = true);
+  localStorage.setItem(KEY, JSON.stringify(owned));
+  render();
+});
+document.getElementById("clearAll").addEventListener("click", () => {
+  CHARACTERS.forEach(ch => owned[ch.name] = false);
+  localStorage.setItem(KEY, JSON.stringify(owned));
+  render();
+});
+
+/* ===== 6) エクスポート／インポート ===== */
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const data = JSON.stringify(owned);
+  $io.value = data;
+  $io.select(); document.execCommand("copy");
+  alert("コピーしました！");
+});
+document.getElementById("importBtn").addEventListener("click", () => {
+  try {
+    const data = JSON.parse($io.value || "{}");
+    owned = data;
+    localStorage.setItem(KEY, JSON.stringify(owned));
+    render();
+    alert("読み込みました");
+  } catch {
+    alert("JSONの形式が正しくありません");
+  }
+});
+
+/* 初期表示 */
+render();
+</script>
+</body>
+</html>
