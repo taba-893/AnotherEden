@@ -1,29 +1,49 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>所持キャラチェッカー｜Another Eden</title>
-<style>
-  body{font-family:system-ui,Segoe UI,Arial; line-height:1.6; margin:24px;}
-  h1{font-size:22px; margin:0 0 12px;}
-  .toolbar{display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px}
-  input[type="text"]{padding:8px; min-width:220px; border:1px solid #ccc; border-radius:6px}
-  button{padding:8px 12px; border:1px solid #ccc; background:#fff; border-radius:8px; cursor:pointer}
-  button:hover{background:#f6f6f6}
-  .count{margin-left:auto; font-weight:bold}
-  .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:10px}
-  .card{border:1px solid #e2e2e2; border-radius:10px; padding:10px; display:flex; gap:8px; align-items:center}
-  .card input{transform:scale(1.2)}
-  .badge{font-size:12px; padding:2px 6px; border:1px solid #ddd; border-radius:999px; background:#fafafa}
-  .muted{color:#666; font-size:12px}
-  details{margin-top:14px}
-  textarea{width:100%; min-height:110px; padding:8px; border:1px solid #ccc; border-radius:8px}
-  .footer{margin-top:18px; font-size:12px; color:#666}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>所持キャラチェッカー｜画像対応版</title>
+  <!--
+    ▼使い方
+    1) このファイルを checker.html として保存（リポジトリ直下）
+    2) /images フォルダを作り、 aldo.png などのキャラ画像を配置
+       例: /images/aldo.png, /images/iwera.png ...
+    3) CHARACTERS 配列の img に画像パスを設定 (例: "./images/aldo.png")
+    4) index.html から <a href="checker.html">所持キャラチェッカー</a> でリンク
+  -->
+  <style>
+    :root {
+      --border: #e6e6e6;
+      --muted: #666;
+      --bg: #fff;
+      --hover: #f6f6f6;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Arial, "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.6; margin: 24px; }
+    h1 { font-size: 22px; margin: 0 0 12px; }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+    input[type="text"], select { padding: 8px; min-width: 220px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+    button { padding: 8px 12px; border: 1px solid #ccc; background: var(--bg); border-radius: 10px; cursor: pointer; }
+    button:hover { background: var(--hover); }
+    .count { margin-left: auto; font-weight: bold; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .card { border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; background: #fff; }
+    .card picture, .card img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #fafafa; border: 1px solid var(--border); }
+    .title { display: flex; align-items: center; gap: 6px; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .badge { font-size: 12px; padding: 2px 6px; border: 1px solid #ddd; border-radius: 999px; background: #fafafa; }
+    .row { display: flex; align-items: center; gap: 8px; }
+    .row input[type="checkbox"] { transform: scale(1.2); }
+
+    details { margin-top: 16px; }
+    textarea { width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 10px; }
+    .footer { margin-top: 16px; font-size: 12px; color: var(--muted); }
+  </style>
 </head>
 <body>
-  <h1>所持キャラチェッカー</h1>
+  <h1>所持キャラチェッカー（画像対応版）</h1>
 
   <!-- ツールバー -->
   <div class="toolbar">
@@ -34,7 +54,7 @@
       <option value="4">★4</option>
       <option value="3">★3</option>
     </select>
-    <label><input id="ownedOnly" type="checkbox"> 所持のみ表示</label>
+    <label class="row"><input id="ownedOnly" type="checkbox"> 所持のみ表示</label>
     <button id="checkAll">全て所持にする</button>
     <button id="clearAll">全て未所持にする</button>
     <span class="count" id="count">所持 0 / 0</span>
@@ -51,38 +71,43 @@
       <button id="importBtn">インポート（下の欄から）</button>
     </div>
     <textarea id="io" placeholder="ここに貼り付け／ここからコピー"></textarea>
-    <p class="muted">ブラウザのローカル保存（localStorage）を使います。このPC・このブラウザ限定で記録されます。</p>
+    <p class="muted">ブラウザのローカル保存（localStorage）を使います。同じPC・同じブラウザで保持されます。</p>
   </details>
 
-  <div class="footer">Tips: 文字を入力すると即時フィルタされます／変更は自動保存されます。</div>
+  <div class="footer">Tips: 文字入力で即フィルタ／チェックは自動保存／画像は ./images に配置してパスを指定してください。</div>
 
 <script>
-/* ===== 1) キャラ一覧（必要に応じて追加・編集してください） ===== */
+/* ========================
+   1) キャラ一覧（必要に応じて追加）
+   - name: 表示名
+   - rarity: 数値（5/4/3）
+   - tag: 任意の分類
+   - img: 画像パス or 絶対URL
+   ======================== */
 const CHARACTERS = [
-  // name, rarity(数値), tag(シリーズ等任意)
-  {name:"アルド", rarity:5, tag:"主人公"},
-  {name:"イウェラ", rarity:5, tag:"邂逅"},
-  {name:"シェリーヌ", rarity:4, tag:"配布"},
-  {name:"ツバメ", rarity:5, tag:"AS有"},
-  {name:"マリエル", rarity:5, tag:"ヒーラー"},
-  {name:"ガリユ", rarity:4, tag:"邂逅"},
-  {name:"トゥーヴァ", rarity:5, tag:"魔"},
-  {name:"ロゼッタ", rarity:5, tag:"支援"},
-  {name:"ナギ", rarity:4, tag:"槍"},
-  {name:"デューイ", rarity:5, tag:"拳"},
-  // …好きなだけ追加
+  { name: "アルド",   rarity: 5, tag: "主人公",   img: "./images/aldo.png" },
+  { name: "イウェラ", rarity: 5, tag: "邂逅",     img: "./images/iwera.png" },
+  { name: "シェリーヌ", rarity: 4, tag: "配布",     img: "./images/sherine.png" },
+  { name: "ツバメ",   rarity: 5, tag: "AS有",     img: "./images/tsubame.png" },
+  { name: "マリエル", rarity: 5, tag: "ヒーラー", img: "./images/mariel.png" },
+  { name: "ガリユ",   rarity: 4, tag: "邂逅",     img: "./images/gariyu.png" },
+  { name: "トゥーヴァ", rarity: 5, tag: "魔",       img: "./images/twovah.png" },
+  { name: "ロゼッタ", rarity: 5, tag: "支援",     img: "./images/rosetta.png" },
+  { name: "ナギ",     rarity: 4, tag: "槍",       img: "./images/nagi.png" },
+  { name: "デューイ", rarity: 5, tag: "拳",       img: "./images/dewey.png" },
+  // 以降、自由に追加してください
 ];
 
-/* ===== 2) 状態の保存キー ===== */
-const KEY = "ae_owned_v1";
+/* ========================
+   2) 保存キーと初期化
+   ======================== */
+const KEY = "ae_owned_v1_images";
+let owned = {};
+try { owned = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (_) { owned = {}; }
 
-/* ===== 3) 保存データの読み込み（所持:true/未所持:false） ===== */
-let owned = {}; // { "アルド": true, ... }
-try {
-  owned = JSON.parse(localStorage.getItem(KEY) || "{}");
-} catch (_) { owned = {}; }
-
-/* ===== 4) DOM生成 ===== */
+/* ========================
+   3) DOM要素参照
+   ======================== */
 const $list = document.getElementById("list");
 const $q = document.getElementById("q");
 const $rarity = document.getElementById("rarity");
@@ -90,12 +115,28 @@ const $ownedOnly = document.getElementById("ownedOnly");
 const $count = document.getElementById("count");
 const $io = document.getElementById("io");
 
+/* ========================
+   4) カード生成（画像対応）
+   ======================== */
 function createCard(ch) {
-  const div = document.createElement("label");
-  div.className = "card";
-  div.dataset.name = ch.name;
-  div.dataset.rarity = ch.rarity;
-  div.dataset.tag = ch.tag || "";
+  const wrap = document.createElement("label");
+  wrap.className = "card";
+  wrap.dataset.name = ch.name;
+  wrap.dataset.rarity = String(ch.rarity);
+  wrap.dataset.tag = ch.tag || "";
+
+  // 画像（onerror で非表示にして崩れ対策）
+  const pic = document.createElement("picture");
+  const img = document.createElement("img");
+  img.alt = ch.name;
+  if (ch.img) img.src = ch.img;
+  img.onerror = () => { img.style.display = "none"; }; // 画像がなければ非表示
+  pic.appendChild(img);
+
+  // テキスト & チェックボックス
+  const right = document.createElement("div");
+  const row1 = document.createElement("div");
+  row1.className = "row";
 
   const cb = document.createElement("input");
   cb.type = "checkbox";
@@ -104,18 +145,31 @@ function createCard(ch) {
     owned[ch.name] = cb.checked;
     localStorage.setItem(KEY, JSON.stringify(owned));
     updateCount();
-    applyFilter(); // 所持のみ表示のとき即反映
+    applyFilter();
   });
 
-  const txt = document.createElement("div");
-  txt.innerHTML = `<div><strong>${ch.name}</strong></div>
-                   <div class="muted">★${ch.rarity} <span class="badge">${ch.tag || "-"}</span></div>`;
+  const title = document.createElement("div");
+  title.className = "title";
+  title.innerHTML = `<strong>${ch.name}</strong>`;
 
-  div.appendChild(cb);
-  div.appendChild(txt);
-  return div;
+  row1.appendChild(cb);
+  row1.appendChild(title);
+
+  const row2 = document.createElement("div");
+  row2.className = "muted";
+  row2.innerHTML = `★${ch.rarity} <span class="badge">${ch.tag || "-"}</span>`;
+
+  right.appendChild(row1);
+  right.appendChild(row2);
+
+  wrap.appendChild(pic);
+  wrap.appendChild(right);
+  return wrap;
 }
 
+/* ========================
+   5) 描画・フィルタ・カウント
+   ======================== */
 function render() {
   $list.innerHTML = "";
   CHARACTERS.forEach(ch => $list.appendChild(createCard(ch)));
@@ -133,22 +187,21 @@ function applyFilter() {
   const q = $q.value.trim().toLowerCase();
   const r = $rarity.value;
   const ownOnly = $ownedOnly.checked;
-
   [...$list.children].forEach(card => {
     const name = card.dataset.name.toLowerCase();
     const rar = card.dataset.rarity;
     const has = !!owned[card.dataset.name];
-
     let show = true;
     if (q && !name.includes(q)) show = false;
     if (r && r !== rar) show = false;
     if (ownOnly && !has) show = false;
-
     card.style.display = show ? "" : "none";
   });
 }
 
-/* ===== 5) イベント ===== */
+/* ========================
+   6) イベント
+   ======================== */
 $q.addEventListener("input", applyFilter);
 $rarity.addEventListener("change", applyFilter);
 $ownedOnly.addEventListener("change", applyFilter);
@@ -158,19 +211,24 @@ document.getElementById("checkAll").addEventListener("click", () => {
   localStorage.setItem(KEY, JSON.stringify(owned));
   render();
 });
+
 document.getElementById("clearAll").addEventListener("click", () => {
   CHARACTERS.forEach(ch => owned[ch.name] = false);
   localStorage.setItem(KEY, JSON.stringify(owned));
   render();
 });
 
-/* ===== 6) エクスポート／インポート ===== */
+/* ========================
+   7) エクスポート／インポート
+   ======================== */
 document.getElementById("exportBtn").addEventListener("click", () => {
   const data = JSON.stringify(owned);
   $io.value = data;
-  $io.select(); document.execCommand("copy");
+  $io.select();
+  document.execCommand("copy");
   alert("コピーしました！");
 });
+
 document.getElementById("importBtn").addEventListener("click", () => {
   try {
     const data = JSON.parse($io.value || "{}");
@@ -183,7 +241,7 @@ document.getElementById("importBtn").addEventListener("click", () => {
   }
 });
 
-/* 初期表示 */
+/* 初期描画 */
 render();
 </script>
 </body>

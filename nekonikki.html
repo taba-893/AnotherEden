@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>ねこにっき 検索</title>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  input { font-size:16px; }
+  table { width: 80%; border-collapse: collapse; margin-bottom: 30px; margin:0 auto; table-layout: fixed;}
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: center; }
+  .hidden { display: none; }
+.search-container {
+  text-align: center; /* 中央寄せ */
+  margin: 20px 0; /* 上下に余白 */
+}
+
+.search-container input {
+  display: inline-block; /* 横並び */
+  margin: 5px;
+  padding: 8px;
+  width: 250px; /* 横幅を揃える */
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<h1>検索　（最終更新日：2025年10月7日）</h1>
+<div class="search-container">
+  <input type="text" id="searchInput1" placeholder="フレーズで検索">
+  <input type="text" id="searchInput2" placeholder="場所で検索">
+  <input type="text" id="searchInput3" placeholder="時代で検索">
+</div>
+
+<h2>ノーマルスタイル（書）</h2>
+<table class="search-table" data-char-col="2">
+  <thead>
+    <tr><th>フレーズ</th><th>場所</th><th>時代</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>たくさんのヒトの熱狂が伝わってくる……<p>賑やかなスタジアムニャマス！</p></td><td>サテラ・スタジアム</td><td>未来・ガルレア大陸</td></tr>
+    <tr><td></td><td></td><td></td></tr>
+
+    <script>
+const searchInput1 = document.getElementById("searchInput1"); // 書・異節・改典・典録
+const searchInput2 = document.getElementById("searchInput2"); // キャラ名
+const searchInput3 = document.getElementById("searchInput3"); // 入手場所（追加）
+const tables = document.querySelectorAll("table.search-table");
+const rows = document.querySelectorAll("table.search-table tbody tr");
+
+function toHiragana(str) {
+  return str.replace(/[\u30a1-\u30f6]/g, ch =>
+    String.fromCharCode(ch.charCodeAt(0) - 0x60)
+  );
+}
+
+function filterRows() {
+  const keyword1 = toHiragana((searchInput1?.value || "").trim().toLowerCase());
+  const keyword2 = toHiragana((searchInput2?.value || "").trim().toLowerCase());
+  const keyword3 = toHiragana((searchInput3?.value || "").trim().toLowerCase()); // 入手場所
+  let matchFound = false;
+
+  rows.forEach(row => {
+    const table = row.closest("table");
+    const charColIndex = parseInt(table.dataset.charCol) - 1; // 0-based index
+    const cells = row.querySelectorAll("td");
+
+    // 列テキスト取得（安全に）
+    const col1Text  = toHiragana((cells[0]?.innerText || "").toLowerCase());                 // 書/異節/改典/典録
+    const charText  = toHiragana((cells[charColIndex]?.innerText || "").toLowerCase());      // キャラ名
+    const hasPlace  = cells.length >= 3;                                                      // 入手場所列の有無
+    const placeText = hasPlace ? toHiragana((cells[2].innerText || "").toLowerCase()) : "";   // 入手場所（ノーマルのみ）
+
+    // AND 条件（キーワード未入力はスルー）
+    const match1 = !keyword1 || col1Text.includes(keyword1);
+    const match2 = !keyword2 || charText.includes(keyword2);
+    const match3 = !keyword3 || (hasPlace && placeText.includes(keyword3));
+
+    if (match1 && match2 && match3) {
+      row.classList.remove("hidden");
+      matchFound = true;
+    } else {
+      row.classList.add("hidden");
+    }
+  });
+
+  // メッセージ表示
+  const noResult = document.getElementById("noResult");
+  const h2Element = document.querySelector("h2");
+  if (!matchFound && (keyword1 || keyword2 || keyword3)) {
+    if (!noResult) {
+      const msg = document.createElement("p");
+      msg.id = "noResult";
+      msg.style.color = "red";
+      msg.innerText = "該当データはありません";
+      if (h2Element) {
+        h2Element.parentNode.insertBefore(msg, h2Element);
+      } else {
+        document.body.appendChild(msg);
+      }
+    }
+  } else {
+    if (noResult) noResult.remove();
+  }
+}
+
+// 入力イベント
+searchInput1.addEventListener("keyup", filterRows);
+searchInput2.addEventListener("keyup", filterRows);
+searchInput3.addEventListener("keyup", filterRows); // 追加
+</script>
+
+
+
+
+</body>
+</html>
