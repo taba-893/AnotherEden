@@ -1,0 +1,85 @@
+/* ==============================
+   nekonikki.css — 完全版（外部CSS専用）
+   ※ このファイルに <style> や <script> は入れない
+   ============================== */
+
+/* --- 共通 --- */
+body { font-family: Arial, sans-serif; margin: 20px; }
+input { font-size: 16px; }
+
+table {
+  width: 80%;
+  border-collapse: collapse;
+  margin: 0 auto 30px auto; /* 中央寄せ + 下余白 */
+  table-layout: fixed;       /* 列幅の計算を安定化 */
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.hidden { display: none; }
+
+/* --- 検索ボックス --- */
+.search-container { text-align: center; margin: 20px 0; }
+.search-container input {
+  display: inline-block;
+  margin: 5px;
+  padding: 8px;
+  width: 250px;
+  font-size: 16px;
+}
+
+/* --- 表内画像：セル幅に収める（比率維持） --- */
+.search-table img {
+  max-width: 100%;
+  height: auto;
+  display: block;    /* 行間の隙間防止 */
+  object-fit: contain;
+  cursor: zoom-in;   /* クリックで拡大できる見た目に */
+}
+
+/* --- マップ列（4列目）はサムネ上限を設定 --- */
+.search-table td:nth-child(4) img {
+  max-height: 180px; /* ←必要に応じて調整 */
+}
+
+/* --- 列幅の目安（任意） --- */
+.search-table th:nth-child(1) { width: 35%; }
+.search-table th:nth-child(2) { width: 20%; }
+.search-table th:nth-child(3) { width: 20%; }
+.search-table th:nth-child(4) { width: 25%; }
+
+/* ==============================
+   ライトボックス（クリック拡大用オーバーレイ）
+   ============================== */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;                /* top/right/bottom/left: 0 と同義 */
+  z-index: 9999;
+  background: rgba(0,0,0,0.85);
+  display: none;           /* JSで .is-open を付けて表示 */
+  align-items: center;
+  justify-content: center;
+}
+
+.lightbox-overlay.is-open { display: flex; }
+
+.lightbox-overlay img {
+  max-width: 90vw;
+  max-height: 90vh;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}

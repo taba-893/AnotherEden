@@ -22,10 +22,11 @@
   font-size: 16px;
 }
 </style>
+<link rel="stylesheet" href="nekonikki.css">
 </head>
 <body>
 
-<h1>検索　（最終更新日：2025年10月7日）</h1>
+<h1>検索　（最終更新日：2025年10月11日）</h1>
 <div class="search-container">
   <input type="text" id="searchInput1" placeholder="フレーズで検索">
   <input type="text" id="searchInput2" placeholder="場所で検索">
@@ -35,15 +36,19 @@
 <h2>ねこにっき　検索</h2>
 <table class="search-table" data-char-col="2">
   <thead>
-    <tr><th>フレーズ</th><th>場所</th><th>時代</th></tr>
+    <tr><th>フレーズ</th><th>場所</th><th>時代</th><th>マップ</th></tr>
   </thead>
   <tbody>
-    <tr><td>たくさんのヒトの熱狂が伝わってくる……<p>賑やかなスタジアムニャマス！</p></td><td>サテラ・スタジアム</td><td>未来・ガルレア大陸</td></tr>
-    <tr><td>この里　寒すぎるニャマス！　はやく<p>かまくらの中に避難するニャマス！</p></td><td>隠れ里　イトイス</td><td>現代・ガルレア大陸</td></tr>
-    <tr><td>早く連れ戻すニャマス！　生きている者が<p>いるべき世界じゃないニャマス！</p></td><td>煉獄界</td><td>古代・ミグレイナ大陸</td></tr>
-    <tr><td>湖の上に街が……！　小舟に揺られて<p>優雅に　まわってみたいニャマスね。</p></td><td>水の都　アクトゥール</td><td>古代・ミグレイナ大陸</td></tr>
-    <tr><td>山風が涼しくて<p>風車の音が　心地いい国ニャマス～。</p></td><td>山の国　ガダロ</td><td>古代・ガルレア大陸</td></tr>
-    <tr><td>あの社が　こんな有様とは……<p>時の流れは　残酷ニャマス……</p></td><td>猫神神社跡地</td><td>未来・ガルレア大陸</td></tr>
+    <tr><td>たくさんのヒトの熱狂が伝わってくる……<p>賑やかなスタジアムニャマス！</p></td><td>サテラ・スタジアム</td><td>未来・ガルレア大陸</td><td></td></tr>
+    <tr><td>この里　寒すぎるニャマス！　はやく<p>かまくらの中に避難するニャマス！</p></td><td>隠れ里　イトイス</td><td>現代・ガルレア大陸</td><td></td></tr>
+    <tr><td>早く連れ戻すニャマス！　生きている者が<p>いるべき世界じゃないニャマス！</p></td><td>煉獄界</td><td>古代・ミグレイナ大陸</td><td></td></tr>
+    <tr><td>湖の上に街が……！　小舟に揺られて<p>優雅に　まわってみたいニャマスね。</p></td><td>水の都　アクトゥール</td><td>古代・ミグレイナ大陸</td><td></td></tr>
+    <tr><td>山風が涼しくて<p>風車の音が　心地いい国ニャマス～。</p></td><td>山の国　ガダロ</td><td>古代・ガルレア大陸</td><td></td></tr>
+    <tr><td>ワタクシたち猫にとって<p>居心地がよさそうな社ニャマスね……！</p></td><td>猫神神社</td><td>現代・ガルレア大陸</td><td><img src="猫神神社.PNG" class="map-img" alt="猫神神社"></td></tr>
+    <tr><td>木の上に大きなヒトたちがいっぱい……<p>スケールの大きな村ニャマス。</p></td><td>古代樹の村　パドレ</td><td>古代・ガルレア大陸</td><td><img src="古代樹の村　パドレ.PNG" class="map-img" alt="パドレ"></td></tr>
+    <tr><td>ベンチに座って　空中から街を<p>一望できるなんて……！　すごい技術ニャマス！</p></td><td>空中遊郭　イージア</td><td>未来・ガルレア大陸</td><td><img src="空中遊郭　イージア.PNG" class="map-img" alt="イージア"></td></tr>
+    <tr><td>見晴らしがいい街ニャマスね。空に<p>浮かんだ大きな木が　よく見えるニャマス。</p></td><td>浮遊街　ニルヴァ</td><td>未来・ミグレイナ大陸</td><td><img src="浮遊街　ニルヴァ.PNG" class="map-img" alt="ニルヴァ"></td></tr>
+    <tr><td><p></p></td><td></td><td></td><td></td></tr>
 
     <script>
 const searchInput1 = document.getElementById("searchInput1"); // 書・異節・改典・典録
@@ -112,6 +117,33 @@ function filterRows() {
 searchInput1.addEventListener("keyup", filterRows);
 searchInput2.addEventListener("keyup", filterRows);
 searchInput3.addEventListener("keyup", filterRows); // 追加
+
+(function(){
+// オーバーレイ生成（ページに1個）
+const overlay = document.createElement('div');
+overlay.className = 'lightbox-overlay';
+overlay.innerHTML = '<span class="lightbox-close" aria-label="閉じる">×</span><img alt="preview">';
+document.body.appendChild(overlay);
+const big = overlay.querySelector('img');
+const closeBtn = overlay.querySelector('.lightbox-close');
+
+
+function open(src){ big.src = src; overlay.classList.add('is-open'); document.body.style.overflow='hidden'; }
+function close(){ overlay.classList.remove('is-open'); big.src = ''; document.body.style.overflow=''; }
+
+
+// ▼ 全画像を対象（表だけに限定したい場合は 'document' → '.search-table' に変更）
+document.addEventListener('click', function(e){
+const img = e.target.closest('img');
+if (!img) return;
+const full = img.getAttribute('data-full') || img.src; // data-full優先
+open(full);
+});
+
+
+overlay.addEventListener('click', (e)=>{ if (e.target===overlay || e.target===closeBtn) close(); });
+document.addEventListener('keydown', (e)=>{ if (e.key==='Escape') close(); });
+})();
 </script>
 
 
