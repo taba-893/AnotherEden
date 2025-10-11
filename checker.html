@@ -152,21 +152,49 @@
    - img: 画像パス or 絶対URL
    ======================== */
 const CHARACTERS = [
-  { name: "アルド",   rarity: 5, tag: "剣",   img: "https://placehold.co/44x44/3498db/ffffff?text=A" },
-  { name: "イウェラ", rarity: 5, tag: "杖",     img: "https://placehold.co/44x44/2ecc71/ffffff?text=I" },
-  { name: "シェリーヌ", rarity: 5, tag: "拳",     img: "https://placehold.co/44x44/9b59b6/ffffff?text=S" },
-  { name: "ツバメ",   rarity: 5, tag: "拳",     img: "https://placehold.co/44x44/f1c40f/333333?text=T" },
-  { name: "マリエル", rarity: 5, tag: "杖/ヒーラー", img: "https://placehold.co/44x44/e74c3c/ffffff?text=M" }, // タグを複数設定
-  { name: "ガリユ",   rarity: 5, tag: "杖/火属性",     img: "https://placehold.co/44x44/1abc9c/ffffff?text=G" }, // タグを複数設定
-  { name: "トゥーヴァ", rarity: 5, tag: "杖/シャドウ",       img: "https://placehold.co/44x44/d35400/ffffff?text=T" },
-  { name: "ロゼッタ", rarity: 5, tag: "杖",     img: "https://placehold.co/44x44/8e44ad/ffffff?text=R" },
-  { name: "ナギ",     rarity: 5, tag: "斧/地属性",       img: "https://placehold.co/44x44/2c3e50/ffffff?text=N" },
-  { name: "デューイ", rarity: 5, tag: "拳/水属性",       img: "https://placehold.co/44x44/7f8c8d/ffffff?text=D" },
-    // ★4 キャラクター例
-    { name: "サイラス", rarity: 4, tag: "剣",   img: "https://placehold.co/44x44/c0392b/ffffff?text=S4" },
-    { name: "ノノ",   rarity: 4, tag: "杖",     img: "https://placehold.co/44x44/27ae60/ffffff?text=N4" },
-    // ★3 キャラクター例
-    { name: "リィカ", rarity: 3, tag: "槍",   img: "https://placehold.co/44x44/f39c12/333333?text=R3" },
+  { name: "アルド",          rarity: 5, tag: "剣/🔴🟣🟡⚪🟤",   img: "" },
+  { name: "アルド（AS）",    rarity: 5, tag: "剣/🔴🟣🟡⚪🟤",   img: "" },
+  { name: "エイミ",          rarity: 5, tag: "拳/🟢",   img: "" },
+  { name: "リィカ",          rarity: 5, tag: "槌/🟤",   img: "" },
+  { name: "サイラス",        rarity: 5, tag: "刀/🔵",   img: "" },
+  { name: "ヘレナ",          rarity: 5, tag: "杖/🟤",   img: "" },
+  { name: "フィーネ",        rarity: 5, tag: "杖/⚫",   img: "" },
+  { name: "フィーネ（AS）",   rarity: 5, tag: "杖/⚫",   img: "" },
+  { name: "ギルドナ",         rarity: 5, tag: "剣/🔴",   img: "" },
+  { name: "シオン",           rarity: 5, tag: "刀/🔴",   img: "" },
+  { name: "シオン（AS）",     rarity: 5, tag: "刀/🔴",   img: "" },
+  { name: "シオン（ES）",     rarity: 5, tag: "刀/🟡",   img: "" },
+  { name: "シュゼット",       rarity: 5, tag: "槍/🟢",   img: "" },
+  { name: "シュゼット（AS）", rarity: 5, tag: "槍/🟢",   img: "" },
+  { name: "シュゼット（ES)",  rarity: 5, tag: "槍/🟢",   img: "" },
+  { name: "マイティ",        rarity: 5, tag: "杖/🔵",   img: "" },
+  { name: "マイティ（AS)",   rarity: 5, tag: "杖/🔵",   img: "" },
+  { name: "マリエル",        rarity: 5, tag: "杖/⚫",   img: "" },
+  { name: "マリエル（AS)",   rarity: 5, tag: "杖/⚫",   img: "" },
+  { name: "マリエル（ES)",   rarity: 5, tag: "拳/⚫",   img: "" },
+  { name: "トゥーヴァ",      rarity: 5, tag: "杖/🟤",       img: "" },
+  { name: "ロキド",     rarity: 5, tag: "拳/🟤",       img: "" },
+  { name: "アナベル",   rarity: 5, tag: "剣/🔵",   img: "" },
+  { name: "ディアドラ",   rarity: 5, tag: "剣/🟤",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "",   rarity: 5, tag: "/",   img: "" },
+  { name: "イウェラ",   rarity: 5, tag: "杖/🔵",     img: "" },
+  { name: "シェリーヌ", rarity: 5, tag: "拳/🟤",     img: "" },
+  { name: "ツバメ",     rarity: 5, tag: "拳/🟤",     img: "" },
+  { name: "マリエル",   rarity: 5, tag: "杖/", img: "" }, // タグを複数設定
+  { name: "ガリユ",     rarity: 5, tag: "杖/🔴",     img: "" }, // タグを複数設定
+  { name: "ロゼッタ",   rarity: 5, tag: "杖/🔴",     img: "" },
+  { name: "ナギ",       rarity: 5, tag: "斧/🟤",       img: "" },
+  { name: "デューイ",   rarity: 5, tag: "拳/🔵",       img: "" },
+  { name: "ノノルド",   rarity: 5, tag: "杖/",     img: "" },
 ];
 
 /* ========================
