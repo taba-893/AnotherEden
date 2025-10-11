@@ -23,13 +23,50 @@
     body { font-family: system-ui, -apple-system, Segoe UI, Arial, "Hiragino Sans", "Noto Sans JP", sans-serif; line-height: 1.6; margin: 24px; }
     h1 { font-size: 22px; margin: 0 0 12px; }
     .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
-    input[type="text"], select { padding: 8px; min-width: 220px; border: 1px solid #ccc; border-radius: 8px; background: #fff; }
+    /* レスポンシブ対応: 検索フィールドとセレクトボックスの幅を調整 */
+    input[type="text"], select { 
+        padding: 8px; 
+        min-width: 150px; /* 最小幅を少し狭く */
+        flex-grow: 1; /* 柔軟に幅を広げる */
+        max-width: 300px;
+        border: 1px solid #ccc; 
+        border-radius: 8px; 
+        background: #fff; 
+    }
     button { padding: 8px 12px; border: 1px solid #ccc; background: var(--bg); border-radius: 10px; cursor: pointer; }
     button:hover { background: var(--hover); }
-    .count { margin-left: auto; font-weight: bold; }
+    .count { 
+        margin-left: auto; 
+        font-weight: bold; 
+        padding: 8px 0; /* 配置調整 */
+    }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-    .card { border: 1px solid var(--border); border-radius: 12px; padding: 10px; display: grid; grid-template-columns: 44px 1fr; gap: 10px; align-items: center; background: #fff; }
+    .grid {
+        display: grid;
+        gap: 10px;
+        /* 既定は3列 */
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+    /* 画面幅が中くらいのときは2列 */
+    @media (max-width: 1024px) {
+        .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    /* スマホ等の狭い画面では1列 */
+    @media (max-width: 640px) {
+        .grid { grid-template-columns: 1fr; }
+    }
+    
+    .card { 
+        border: 1px solid var(--border); 
+        border-radius: 12px; 
+        padding: 10px; 
+        /* カード内部のレイアウトは維持 */
+        display: grid; 
+        grid-template-columns: 44px 1fr; 
+        gap: 10px; 
+        align-items: center; 
+        background: #fff; 
+    }
     .card picture, .card img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; background: #fafafa; border: 1px solid var(--border); }
     .title { display: flex; align-items: center; gap: 6px; }
     .muted { color: var(--muted); font-size: 12px; }
@@ -40,6 +77,27 @@
     details { margin-top: 16px; }
     textarea { width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ccc; border-radius: 10px; }
     .footer { margin-top: 16px; font-size: 12px; color: var(--muted); }
+
+    /* カスタムアラート（alert()の代替）のためのスタイル */
+    #customAlert {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #333;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+        pointer-events: none; /* クリックを透過させる */
+    }
+    .visible {
+        opacity: 1 !important;
+    }
+
   </style>
 </head>
 <body>
@@ -54,6 +112,12 @@
       <option value="4">★4</option>
       <option value="3">★3</option>
     </select>
+    <!-- ▼ タグ絞り込み機能の追加 -->
+    <select id="tagFilter">
+        <!-- JSでオプションを動的に生成します -->
+    </select>
+    <!-- ▲ タグ絞り込み機能の追加 -->
+    
     <label class="row"><input id="ownedOnly" type="checkbox"> 所持のみ表示</label>
     <button id="checkAll">全て所持にする</button>
     <button id="clearAll">全て未所持にする</button>
@@ -75,6 +139,9 @@
   </details>
 
   <div class="footer">Tips: 文字入力で即フィルタ／チェックは自動保存／画像は ./images に配置してパスを指定してください。</div>
+    
+  <!-- カスタムアラート表示領域 -->
+  <div id="customAlert" aria-live="polite"></div>
 
 <script>
 /* ========================
@@ -85,17 +152,21 @@
    - img: 画像パス or 絶対URL
    ======================== */
 const CHARACTERS = [
-  { name: "アルド",   rarity: 5, tag: "主人公",   img: "./images/aldo.png" },
-  { name: "イウェラ", rarity: 5, tag: "邂逅",     img: "./images/iwera.png" },
-  { name: "シェリーヌ", rarity: 4, tag: "配布",     img: "./images/sherine.png" },
-  { name: "ツバメ",   rarity: 5, tag: "AS有",     img: "./images/tsubame.png" },
-  { name: "マリエル", rarity: 5, tag: "ヒーラー", img: "./images/mariel.png" },
-  { name: "ガリユ",   rarity: 4, tag: "邂逅",     img: "./images/gariyu.png" },
-  { name: "トゥーヴァ", rarity: 5, tag: "魔",       img: "./images/twovah.png" },
-  { name: "ロゼッタ", rarity: 5, tag: "支援",     img: "./images/rosetta.png" },
-  { name: "ナギ",     rarity: 4, tag: "槍",       img: "./images/nagi.png" },
-  { name: "デューイ", rarity: 5, tag: "拳",       img: "./images/dewey.png" },
-  // 以降、自由に追加してください
+  { name: "アルド",   rarity: 5, tag: "剣",   img: "https://placehold.co/44x44/3498db/ffffff?text=A" },
+  { name: "イウェラ", rarity: 5, tag: "杖",     img: "https://placehold.co/44x44/2ecc71/ffffff?text=I" },
+  { name: "シェリーヌ", rarity: 5, tag: "拳",     img: "https://placehold.co/44x44/9b59b6/ffffff?text=S" },
+  { name: "ツバメ",   rarity: 5, tag: "拳",     img: "https://placehold.co/44x44/f1c40f/333333?text=T" },
+  { name: "マリエル", rarity: 5, tag: "杖/ヒーラー", img: "https://placehold.co/44x44/e74c3c/ffffff?text=M" }, // タグを複数設定
+  { name: "ガリユ",   rarity: 5, tag: "杖/火属性",     img: "https://placehold.co/44x44/1abc9c/ffffff?text=G" }, // タグを複数設定
+  { name: "トゥーヴァ", rarity: 5, tag: "杖/シャドウ",       img: "https://placehold.co/44x44/d35400/ffffff?text=T" },
+  { name: "ロゼッタ", rarity: 5, tag: "杖",     img: "https://placehold.co/44x44/8e44ad/ffffff?text=R" },
+  { name: "ナギ",     rarity: 5, tag: "斧/地属性",       img: "https://placehold.co/44x44/2c3e50/ffffff?text=N" },
+  { name: "デューイ", rarity: 5, tag: "拳/水属性",       img: "https://placehold.co/44x44/7f8c8d/ffffff?text=D" },
+    // ★4 キャラクター例
+    { name: "サイラス", rarity: 4, tag: "剣",   img: "https://placehold.co/44x44/c0392b/ffffff?text=S4" },
+    { name: "ノノ",   rarity: 4, tag: "杖",     img: "https://placehold.co/44x44/27ae60/ffffff?text=N4" },
+    // ★3 キャラクター例
+    { name: "リィカ", rarity: 3, tag: "槍",   img: "https://placehold.co/44x44/f39c12/333333?text=R3" },
 ];
 
 /* ========================
@@ -103,7 +174,16 @@ const CHARACTERS = [
    ======================== */
 const KEY = "ae_owned_v1_images";
 let owned = {};
-try { owned = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (_) { owned = {}; }
+try { 
+    // ローカルストレージからの読み込み
+    const stored = localStorage.getItem(KEY);
+    if (stored) {
+        owned = JSON.parse(stored);
+    }
+} catch (e) { 
+    console.error("Error loading from localStorage:", e);
+    owned = {}; // 読み込みエラー時は空オブジェクトで初期化
+}
 
 /* ========================
    3) DOM要素参照
@@ -111,26 +191,71 @@ try { owned = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (_) { owned
 const $list = document.getElementById("list");
 const $q = document.getElementById("q");
 const $rarity = document.getElementById("rarity");
+const $tagFilter = document.getElementById("tagFilter"); 
 const $ownedOnly = document.getElementById("ownedOnly");
 const $count = document.getElementById("count");
 const $io = document.getElementById("io");
+const $customAlert = document.getElementById("customAlert");
 
 /* ========================
-   4) カード生成（画像対応）
+    カスタムアラート関数 (alert()の代替)
+    ======================== */
+function showCustomAlert(message) {
+    $customAlert.textContent = message;
+    $customAlert.classList.add('visible');
+    setTimeout(() => {
+        $customAlert.classList.remove('visible');
+    }, 2000); // 2秒後に消える
+}
+
+/* ========================
+    4-1) タグフィルターの動的生成
+    ======================== */
+function populateTagFilter() {
+    const allTags = new Set();
+    CHARACTERS.forEach(ch => {
+        if (ch.tag) {
+            // 例: "杖/ヒーラー"を"杖"と"ヒーラー"に分割して登録
+            ch.tag.split('/').forEach(tag => allTags.add(tag.trim()));
+        }
+    });
+
+    // 既存のオプションをクリア
+    $tagFilter.innerHTML = '';
+
+    // 「すべてのタグ」オプションを追加
+    const defaultOption = document.createElement("option");
+    defaultOption.value = "";
+    defaultOption.textContent = "すべてのタグ";
+    $tagFilter.appendChild(defaultOption);
+
+    // ユニークなタグをソートしてオプションに追加
+    Array.from(allTags).sort().forEach(tag => {
+        const option = document.createElement("option");
+        option.value = tag;
+        option.textContent = tag;
+        $tagFilter.appendChild(option);
+    });
+}
+
+
+/* ========================
+   4-2) カード生成（画像対応）
    ======================== */
 function createCard(ch) {
   const wrap = document.createElement("label");
   wrap.className = "card";
   wrap.dataset.name = ch.name;
   wrap.dataset.rarity = String(ch.rarity);
-  wrap.dataset.tag = ch.tag || "";
+  wrap.dataset.tag = ch.tag || ""; // フィルタリングで使うためデータセットとして保持
 
   // 画像（onerror で非表示にして崩れ対策）
   const pic = document.createElement("picture");
   const img = document.createElement("img");
   img.alt = ch.name;
   if (ch.img) img.src = ch.img;
-  img.onerror = () => { img.style.display = "none"; }; // 画像がなければ非表示
+  // 画像が読み込めなかった場合（ユーザーが画像を配置していない場合など）の処理
+  img.onerror = () => { img.src = `https://placehold.co/44x44/cccccc/333333?text=${ch.name[0]}`; }; 
   pic.appendChild(img);
 
   // テキスト & チェックボックス
@@ -145,7 +270,7 @@ function createCard(ch) {
     owned[ch.name] = cb.checked;
     localStorage.setItem(KEY, JSON.stringify(owned));
     updateCount();
-    applyFilter();
+    applyFilter(); // 所持・未所持で表示を切り替えるためフィルタを再適用
   });
 
   const title = document.createElement("div");
@@ -157,7 +282,17 @@ function createCard(ch) {
 
   const row2 = document.createElement("div");
   row2.className = "muted";
-  row2.innerHTML = `★${ch.rarity} <span class="badge">${ch.tag || "-"}</span>`;
+  
+    // タグを "/" で分割して複数のバッジを表示
+    let tagHtml = "";
+    if (ch.tag) {
+        ch.tag.split('/').forEach(tag => {
+            tagHtml += `<span class="badge">${tag.trim()}</span> `;
+        });
+    } else {
+        tagHtml = `<span class="badge">-</span>`;
+    }
+    row2.innerHTML = `★${ch.rarity} ${tagHtml}`;
 
   right.appendChild(row1);
   right.appendChild(row2);
@@ -173,29 +308,48 @@ function createCard(ch) {
 function render() {
   $list.innerHTML = "";
   CHARACTERS.forEach(ch => $list.appendChild(createCard(ch)));
+  // タグフィルターを最初に生成
+  populateTagFilter(); 
   updateCount();
   applyFilter();
 }
 
 function updateCount() {
   const total = CHARACTERS.length;
-  const have = Object.values(owned).filter(Boolean).length;
+  const have = Object.keys(owned).filter(name => owned[name]).length;
   $count.textContent = `所持 ${have} / ${total}`;
 }
 
 function applyFilter() {
   const q = $q.value.trim().toLowerCase();
   const r = $rarity.value;
+  // ▼ タグフィルターの値を取得
+  const t = $tagFilter.value;
+  // ▲
   const ownOnly = $ownedOnly.checked;
+
   [...$list.children].forEach(card => {
     const name = card.dataset.name.toLowerCase();
     const rar = card.dataset.rarity;
-    const has = !!owned[card.dataset.name];
+    const tags = card.dataset.tag.toLowerCase(); // カードのデータセットからタグを取得
+    const has = !!owned[card.dataset.name]; 
+
     let show = true;
     if (q && !name.includes(q)) show = false;
     if (r && r !== rar) show = false;
+    // ▼ タグフィルターのロジックを追加
+    if (t && !tags.includes(t.toLowerCase())) show = false; 
+    // ▲
     if (ownOnly && !has) show = false;
-    card.style.display = show ? "" : "none";
+    
+    // アニメーションを伴って表示・非表示を切り替える
+    if (show) {
+        card.style.display = "";
+        setTimeout(() => card.style.opacity = 1, 10);
+    } else {
+        card.style.opacity = 0;
+        setTimeout(() => card.style.display = "none", 300);
+    }
   });
 }
 
@@ -204,40 +358,58 @@ function applyFilter() {
    ======================== */
 $q.addEventListener("input", applyFilter);
 $rarity.addEventListener("change", applyFilter);
+// ▼ タグフィルターのイベントリスナーを追加
+$tagFilter.addEventListener("change", applyFilter);
+// ▲
 $ownedOnly.addEventListener("change", applyFilter);
 
 document.getElementById("checkAll").addEventListener("click", () => {
   CHARACTERS.forEach(ch => owned[ch.name] = true);
   localStorage.setItem(KEY, JSON.stringify(owned));
   render();
+  showCustomAlert("全て所持にしました！");
 });
 
 document.getElementById("clearAll").addEventListener("click", () => {
   CHARACTERS.forEach(ch => owned[ch.name] = false);
   localStorage.setItem(KEY, JSON.stringify(owned));
   render();
+  showCustomAlert("全て未所持にしました。");
 });
 
 /* ========================
    7) エクスポート／インポート
    ======================== */
+
 document.getElementById("exportBtn").addEventListener("click", () => {
   const data = JSON.stringify(owned);
   $io.value = data;
   $io.select();
-  document.execCommand("copy");
-  alert("コピーしました！");
+  try {
+    document.execCommand("copy");
+    showCustomAlert("データをクリップボードにコピーしました！");
+  } catch (err) {
+    console.error("Copy error:", err);
+    showCustomAlert("コピーに失敗しました。テキストエリアから手動でコピーしてください。");
+  }
 });
+
 
 document.getElementById("importBtn").addEventListener("click", () => {
   try {
-    const data = JSON.parse($io.value || "{}");
+    const data = JSON.parse($io.value.trim() || "{}");
+    // データ構造の簡単な検証
+    if (typeof data !== 'object' || Array.isArray(data)) {
+        throw new Error("Invalid JSON structure");
+    }
+
     owned = data;
     localStorage.setItem(KEY, JSON.stringify(owned));
     render();
-    alert("読み込みました");
-  } catch {
-    alert("JSONの形式が正しくありません");
+    showCustomAlert("所持データを読み込みました！");
+  } catch (e) {
+    console.error("Import error:", e);
+    showCustomAlert("エラー: JSONの形式が正しくありません");
   }
 });
 
